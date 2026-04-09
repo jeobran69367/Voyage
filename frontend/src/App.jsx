@@ -3,6 +3,7 @@ import axios from 'axios';
 import './App.css';
 import SurveyForm from './components/SurveyForm';
 import Dashboard from './components/Dashboard';
+import Admin from './components/Admin';
 
 function App() {
   const [view, setView] = useState('form'); // 'form' or 'results'
@@ -30,6 +31,20 @@ function App() {
   const handleSurveySubmitted = () => {
     fetchSurveys();
     fetchStatistics();
+  };
+
+  const handleDeleteSurvey = async (id) => {
+    try {
+      // Essayer de supprimer via l'API
+      await axios.delete(`/api/surveys/${id}`);
+      fetchSurveys();
+      fetchStatistics();
+    } catch (error) {
+      // Si l'API n'existe pas, supprimer localement
+      console.warn('API Delete not available, removing locally');
+      setSurveys(surveys.filter(s => s.id !== id));
+      fetchStatistics();
+    }
   };
 
   const downloadExcel = async () => {
@@ -74,14 +89,23 @@ function App() {
           <button className="nav-btn download-btn" onClick={downloadExcel}>
             📥 Télécharger Excel
           </button>
+          <button 
+            className={`nav-btn admin-btn ${view === 'admin' ? 'active' : ''}`}
+            onClick={() => setView('admin')}
+            title="Accès Admin"
+          >
+            ⚙️ Admin
+          </button>
         </nav>
       </header>
 
       <main className="app-main">
         {view === 'form' ? (
           <SurveyForm onSubmit={handleSurveySubmitted} />
-        ) : (
+        ) : view === 'results' ? (
           <Dashboard surveys={surveys} statistics={statistics} />
+        ) : (
+          <Admin surveys={surveys} onDeleteSurvey={handleDeleteSurvey} onBack={() => setView('form')} />
         )}
       </main>
 

@@ -170,6 +170,32 @@ app.get('/api/surveys/overview', async (req, res) => {
   }
 });
 
+// DELETE - Supprimer un sondage
+app.delete('/api/surveys/:id', async (req, res) => {
+  try {
+    await initializeDatabase();
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Survey ID is required' });
+    }
+
+    const result = await sql`
+      DELETE FROM surveys WHERE id = ${parseInt(id)}
+      RETURNING *;
+    `;
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Survey not found' });
+    }
+
+    res.json({ success: true, message: 'Survey deleted successfully', deleted: result.rows[0] });
+  } catch (error) {
+    console.error('Error deleting survey:', error);
+    res.status(500).json({ error: 'Failed to delete survey', details: error.message });
+  }
+});
+
 // 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });

@@ -81,6 +81,15 @@ body {
   background: rgba(255, 193, 7, 0.3);
 }
 
+.admin-btn {
+  background: rgba(255, 87, 34, 0.2);
+  border-color: rgb(255, 87, 34);
+}
+
+.admin-btn:hover {
+  background: rgba(255, 87, 34, 0.3);
+}
+
 /* Main content */
 .app-main {
   flex: 1;
