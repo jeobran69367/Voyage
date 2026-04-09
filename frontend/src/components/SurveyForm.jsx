@@ -25,7 +25,7 @@ function SurveyForm({ onSubmit }) {
   const [formData, setFormData] = useState({
     name: '',
     country: '',
-    month: [],
+    month: '',
     duration: '',
     budget_min: '',
     budget_max: '',
@@ -53,7 +53,10 @@ function SurveyForm({ onSubmit }) {
   };
 
   const handleSelectMonth = (month) => {
-    handleCheckboxChange('month', month);
+    setFormData(prev => ({
+      ...prev,
+      month: month
+    }));
   };
 
   const handleSelectActivity = (activity) => {
@@ -63,7 +66,7 @@ function SurveyForm({ onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.country || formData.month.length === 0) {
+    if (!formData.name || !formData.country || !formData.month) {
       alert('Veuillez remplir tous les champs obligatoires (Nom, Pays, Mois)');
       return;
     }
@@ -72,7 +75,6 @@ function SurveyForm({ onSubmit }) {
     try {
       const submitData = {
         ...formData,
-        month: formData.month.join(', '),
         activities: formData.activities.join(', ')
       };
 
@@ -84,7 +86,7 @@ function SurveyForm({ onSubmit }) {
         setFormData({
           name: '',
           country: '',
-          month: [],
+          month: '',
           duration: '',
           budget_min: '',
           budget_max: '',
@@ -151,13 +153,14 @@ function SurveyForm({ onSubmit }) {
 
         {/* Mois */}
         <div className="form-group">
-          <label>Mois Disponibles * (Sélectionnez au moins un)</label>
+          <label>Mois Préféré *</label>
           <div className="checkbox-grid">
             {MONTHS.map(month => (
               <label key={month} className="checkbox-label">
                 <input
-                  type="checkbox"
-                  checked={formData.month.includes(month)}
+                  type="radio"
+                  name="month"
+                  checked={formData.month === month}
                   onChange={() => handleSelectMonth(month)}
                 />
                 {month}
