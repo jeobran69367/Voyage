@@ -60,13 +60,14 @@ app.get('/api/surveys/stats', (req, res) => {
         totalSurveys: 0,
         countries: [],
         months: [],
-        budgetStats: { min: 0, max: 0, average: 0 }
+        budget_stats: { avg_min: 0, avg_max: 0, min_budget: 0, max_budget: 0 }
       });
     }
 
     const countryCounts = {};
     const monthCounts = {};
-    let budgetValues = [];
+    let budgetMins = [];
+    let budgetMaxs = [];
 
     surveysData.forEach(survey => {
       countryCounts[survey.country] = (countryCounts[survey.country] || 0) + 1;
@@ -78,31 +79,30 @@ app.get('/api/surveys/stats', (req, res) => {
         });
       }
 
-      if (survey.budget_min && survey.budget_max) {
-        budgetValues.push((survey.budget_min + survey.budget_max) / 2);
-      }
+      if (survey.budget_min) budgetMins.push(survey.budget_min);
+      if (survey.budget_max) budgetMaxs.push(survey.budget_max);
     });
 
     const countries = Object.entries(countryCounts)
-      .map(([name, count]) => ({ name, count }))
+      .map(([country, count]) => ({ country, count }))
       .sort((a, b) => b.count - a.count);
 
     const months = Object.entries(monthCounts)
-      .map(([name, count]) => ({ name, count }))
+      .map(([month, count]) => ({ month, count }))
       .sort((a, b) => b.count - a.count);
 
-    const avgBudget = budgetValues.length > 0 
-      ? budgetValues.reduce((a, b) => a + b, 0) / budgetValues.length 
-      : 0;
+    const avgMin = budgetMins.length > 0 ? Math.round(budgetMins.reduce((a, b) => a + b, 0) / budgetMins.length) : 0;
+    const avgMax = budgetMaxs.length > 0 ? Math.round(budgetMaxs.reduce((a, b) => a + b, 0) / budgetMaxs.length) : 0;
 
     res.json({
       totalSurveys: surveysData.length,
       countries,
       months,
-      budgetStats: {
-        min: budgetValues.length ? Math.min(...budgetValues) : 0,
-        max: budgetValues.length ? Math.max(...budgetValues) : 0,
-        average: Math.round(avgBudget)
+      budget_stats: {
+        avg_min: avgMin,
+        avg_max: avgMax,
+        min_budget: budgetMins.length ? Math.min(...budgetMins) : 0,
+        max_budget: budgetMaxs.length ? Math.max(...budgetMaxs) : 0
       }
     });
   } catch (error) {
