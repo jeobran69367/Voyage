@@ -17,3 +17,4 @@ postgres_data/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+.vercel/

@@ -1,44 +1,54 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import bodyParser from 'body-parser';
-import surveyRoutes from '../backend/src/routes/surveyRoutes.js';
-import { createTablesIfNotExists } from '../backend/src/models/Survey.js';
-
-dotenv.config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Initialize database on first call
-let dbInitialized = false;
-app.use(async (req, res, next) => {
-  if (!dbInitialized) {
-    try {
-      await createTablesIfNotExists();
-      dbInitialized = true;
-    } catch (err) {
-      console.error('DB init error:', err);
-    }
-  }
-  next();
-});
-
-// API Routes
-app.use('/api', surveyRoutes);
-
-// Health check
+// Test/Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'API running on Vercel' });
+  res.json({ status: 'API ready', environment: process.env.NODE_ENV });
 });
 
-// Default route
+// Default API response
 app.get('/', (req, res) => {
-  res.json({ message: 'Voyage Survey API - running on Vercel Serverless' });
+  res.json({ message: 'Voyage Survey API' });
+});
+
+// Placeholder for surveys endpoints (TODO: Connect to database)
+app.get('/api/surveys', (req, res) => {
+  // TODO: Connect to Vercel Postgres
+  res.json([]);
+});
+
+app.post('/api/surveys', (req, res) => {
+  // TODO: Connect to Vercel Postgres
+  res.json({ message: 'Survey submitted' });
+});
+
+app.get('/api/surveys/stats', (req, res) => {
+  // TODO: Connect to Vercel Postgres
+  res.json({
+    totalSurveys: 0,
+    countries: [],
+    months: [],
+    budgetStats: { min: 0, max: 0, average: 0 }
+  });
+});
+
+app.get('/api/surveys/overview', (req, res) => {
+  res.json({ overview: 'No data yet' });
+});
+
+app.get('/api/export/excel', (req, res) => {
+  res.status(501).json({ message: 'Excel export not yet implemented' });
+});
+
+// Fallback
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
 });
 
 export default app;
