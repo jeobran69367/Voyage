@@ -59,6 +59,27 @@ function Dashboard({ surveys, statistics }) {
               </div>
             )}
           </div>
+
+          <div className="stat-card">
+            <h3>⏱️ Durée du Voyage</h3>
+            {statistics.duration_stats && (
+              <div className="duration-stats">
+                <p><strong>Moyenne:</strong> {statistics.duration_stats.avg_duration || 'N/A'} jours</p>
+                <p><strong>Min:</strong> {statistics.duration_stats.min_duration || 'N/A'} jours</p>
+                <p><strong>Max:</strong> {statistics.duration_stats.max_duration || 'N/A'} jours</p>
+              </div>
+            )}
+          </div>
+
+          <div className="stat-card">
+            <h3>🤝 Cotisation par Personne</h3>
+            {statistics.avg_contribution_per_person !== undefined && (
+              <div className="contribution-stats">
+                <p className="contribution-amount">€{statistics.avg_contribution_per_person || 'N/A'}</p>
+                <p className="contribution-label">Cotisation moyenne pour le voyage</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

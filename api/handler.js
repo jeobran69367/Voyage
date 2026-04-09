@@ -88,7 +88,9 @@ app.get('/api/surveys/stats', async (req, res) => {
         totalSurveys: 0,
         countries: [],
         months: [],
-        budget_stats: { avg_min: 0, avg_max: 0, min_budget: 0, max_budget: 0 }
+        budget_stats: { avg_min: 0, avg_max: 0, min_budget: 0, max_budget: 0 },
+        duration_stats: { avg_duration: 0, min_duration: 0, max_duration: 0 },
+        avg_contribution_per_person: 0
       });
     }
 
@@ -137,11 +139,34 @@ app.get('/api/surveys/stats', async (req, res) => {
       max_budget: parseInt(budgetData.max_budget) || 0
     };
 
+    // Durée moyenne
+    const durationResult = await sql`
+      SELECT 
+        ROUND(AVG(duration)) as avg_duration,
+        MIN(duration) as min_duration,
+        MAX(duration) as max_duration
+      FROM surveys
+      WHERE duration IS NOT NULL AND duration > 0;
+    `;
+    const durationData = durationResult.rows[0];
+    const duration_stats = {
+      avg_duration: parseInt(durationData.avg_duration) || 0,
+      min_duration: parseInt(durationData.min_duration) || 0,
+      max_duration: parseInt(durationData.max_duration) || 0
+    };
+
+    // Cotisation moyenne par personne (budget moyen / nombre de participants)
+    const avgBudgetPerPerson = Math.round(
+      ((budget_stats.avg_min + budget_stats.avg_max) / 2) / totalSurveys
+    );
+
     res.json({
       totalSurveys,
       countries,
       months,
-      budget_stats
+      budget_stats,
+      duration_stats,
+      avg_contribution_per_person: avgBudgetPerPerson
     });
   } catch (error) {
     console.error('Error fetching statistics:', error);
