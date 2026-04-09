@@ -2,6 +2,15 @@
   "version": 2,
   "buildCommand": "cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/dist",
+  "installCommand": "npm ci && cd frontend && npm ci",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "api/handler.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
