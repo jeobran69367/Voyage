@@ -14,15 +14,32 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialize database
-await createTablesIfNotExists();
+// Initialize database on first call
+let dbInitialized = false;
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      await createTablesIfNotExists();
+      dbInitialized = true;
+    } catch (err) {
+      console.error('DB init error:', err);
+    }
+  }
+  next();
+});
 
-// Routes
+// API Routes
 app.use('/api', surveyRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running on Vercel' });
+app.get('/health', (req, res) => {
+  res.json({ status: 'API running on Vercel' });
+});
+
+// Default route
+app.get('/', (req, res) => {
+  res.json({ message: 'Voyage Survey API - running on Vercel Serverless' });
 });
 
 export default app;
+
