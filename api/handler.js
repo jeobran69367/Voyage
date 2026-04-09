@@ -130,6 +130,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Export for Vercel
-export default app;
+// IMPORTANT: Export as handler function for Vercel, not as Express app
+export default (req, res) => app(req, res);
 
