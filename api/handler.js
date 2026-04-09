@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { sql } from '@vercel/postgres';
 
 const app = express();
 
@@ -7,35 +8,54 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Données en mémoire
-let surveysData = [];
-let surveyId = 1;
+// Initialiser la base de données
+let dbInitialized = false;
+
+async function initializeDatabase() {
+  if (dbInitialized) return;
+  
+  try {
+    // Créer la table si elle n'existe pas
+    await sql`
+      CREATE TABLE IF NOT EXISTS surveys (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        country VARCHAR(255) NOT NULL,
+        month VARCHAR(255) NOT NULL,
+        duration INTEGER,
+        budget_min INTEGER,
+        budget_max INTEGER,
+        activities TEXT,
+        comments TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    
+    dbInitialized = true;
+    console.log('✅ Database initialized');
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+  }
+}
 
 // POST - Ajouter un sondage
-app.post('/api/surveys', (req, res) => {
+app.post('/api/surveys', async (req, res) => {
   try {
+    await initializeDatabase();
     const { name, country, month, duration, budget_min, budget_max, activities, comments } = req.body;
 
     if (!name || !country || !month) {
       return res.status(400).json({ error: 'Name, country, and month are required' });
     }
 
-    const newSurvey = {
-      id: surveyId++,
-      name,
-      country,
-      month,
-      duration: duration || null,
-      budget_min: budget_min || null,
-      budget_max: budget_max || null,
-      activities: activities || null,
-      comments: comments || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    const result = await sql`
+      INSERT INTO surveys (name, country, month, duration, budget_min, budget_max, activities, comments)
+      VALUES (${name}, ${country}, ${month}, ${duration || null}, ${budget_min || null}, ${budget_max || null}, ${activities || null}, ${comments || null})
+      RETURNING *;
+    `;
 
-    surveysData.push(newSurvey);
-    res.status(201).json(newSurvey);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error adding survey:', error);
     res.status(500).json({ error: 'Failed to add survey', details: error.message });
@@ -43,9 +63,11 @@ app.post('/api/surveys', (req, res) => {
 });
 
 // GET - Récupérer tous les sondages
-app.get('/api/surveys', (req, res) => {
+app.get('/api/surveys', async (req, res) => {
   try {
-    res.json(surveysData);
+    await initializeDatabase();
+    const result = await sql`SELECT * FROM surveys ORDER BY created_at DESC;`;
+    res.json(result.rows);
   } catch (error) {
     console.error('Error fetching surveys:', error);
     res.status(500).json({ error: 'Failed to fetch surveys' });
@@ -53,9 +75,15 @@ app.get('/api/surveys', (req, res) => {
 });
 
 // GET - Statistiques
-app.get('/api/surveys/stats', (req, res) => {
+app.get('/api/surveys/stats', async (req, res) => {
   try {
-    if (surveysData.length === 0) {
+    await initializeDatabase();
+    
+    // Total
+    const countResult = await sql`SELECT COUNT(*) as total FROM surveys;`;
+    const totalSurveys = parseInt(countResult.rows[0].total) || 0;
+
+    if (totalSurveys === 0) {
       return res.json({
         totalSurveys: 0,
         countries: [],
@@ -64,46 +92,56 @@ app.get('/api/surveys/stats', (req, res) => {
       });
     }
 
-    const countryCounts = {};
-    const monthCounts = {};
-    let budgetMins = [];
-    let budgetMaxs = [];
+    // Pays populaires
+    const countriesResult = await sql`
+      SELECT country, COUNT(*) as count
+      FROM surveys
+      GROUP BY country
+      ORDER BY count DESC
+      LIMIT 10;
+    `;
+    const countries = countriesResult.rows.map(row => ({
+      country: row.country,
+      count: parseInt(row.count)
+    }));
 
-    surveysData.forEach(survey => {
-      countryCounts[survey.country] = (countryCounts[survey.country] || 0) + 1;
+    // Mois populaires
+    const monthsResult = await sql`
+      SELECT month, COUNT(*) as count
+      FROM surveys
+      WHERE month IS NOT NULL AND month != ''
+      GROUP BY month
+      ORDER BY count DESC
+      LIMIT 10;
+    `;
+    const months = monthsResult.rows.map(row => ({
+      month: row.month,
+      count: parseInt(row.count)
+    }));
 
-      if (survey.month) {
-        const months = survey.month.split(',').map(m => m.trim());
-        months.forEach(m => {
-          monthCounts[m] = (monthCounts[m] || 0) + 1;
-        });
-      }
-
-      if (survey.budget_min) budgetMins.push(survey.budget_min);
-      if (survey.budget_max) budgetMaxs.push(survey.budget_max);
-    });
-
-    const countries = Object.entries(countryCounts)
-      .map(([country, count]) => ({ country, count }))
-      .sort((a, b) => b.count - a.count);
-
-    const months = Object.entries(monthCounts)
-      .map(([month, count]) => ({ month, count }))
-      .sort((a, b) => b.count - a.count);
-
-    const avgMin = budgetMins.length > 0 ? Math.round(budgetMins.reduce((a, b) => a + b, 0) / budgetMins.length) : 0;
-    const avgMax = budgetMaxs.length > 0 ? Math.round(budgetMaxs.reduce((a, b) => a + b, 0) / budgetMaxs.length) : 0;
+    // Budget stats
+    const budgetResult = await sql`
+      SELECT 
+        ROUND(AVG(budget_min)) as avg_min,
+        ROUND(AVG(budget_max)) as avg_max,
+        MIN(budget_min) as min_budget,
+        MAX(budget_max) as max_budget
+      FROM surveys
+      WHERE budget_min IS NOT NULL AND budget_max IS NOT NULL;
+    `;
+    const budgetData = budgetResult.rows[0];
+    const budget_stats = {
+      avg_min: parseInt(budgetData.avg_min) || 0,
+      avg_max: parseInt(budgetData.avg_max) || 0,
+      min_budget: parseInt(budgetData.min_budget) || 0,
+      max_budget: parseInt(budgetData.max_budget) || 0
+    };
 
     res.json({
-      totalSurveys: surveysData.length,
+      totalSurveys,
       countries,
       months,
-      budget_stats: {
-        avg_min: avgMin,
-        avg_max: avgMax,
-        min_budget: budgetMins.length ? Math.min(...budgetMins) : 0,
-        max_budget: budgetMaxs.length ? Math.max(...budgetMaxs) : 0
-      }
+      budget_stats
     });
   } catch (error) {
     console.error('Error fetching statistics:', error);
@@ -112,12 +150,19 @@ app.get('/api/surveys/stats', (req, res) => {
 });
 
 // GET - Vue d'ensemble
-app.get('/api/surveys/overview', (req, res) => {
+app.get('/api/surveys/overview', async (req, res) => {
   try {
+    await initializeDatabase();
+    const result = await sql`
+      SELECT COUNT(*) as total, MAX(created_at) as last_updated
+      FROM surveys;
+    `;
+    const data = result.rows[0];
+    
     res.json({
-      totalResponses: surveysData.length,
-      topCountry: surveysData.length > 0 ? surveysData[0].country : null,
-      lastUpdated: new Date().toISOString()
+      totalResponses: parseInt(data.total) || 0,
+      topCountry: null,
+      lastUpdated: data.last_updated || new Date().toISOString()
     });
   } catch (error) {
     console.error('Error fetching overview:', error);
