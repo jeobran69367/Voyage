@@ -2,8 +2,6 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -132,23 +130,17 @@ app.get('/api/surveys/overview', (req, res) => {
 
 // GET - Export Excel (stub)
 app.get('/api/export/excel', (req, res) => {
-  res.status(501).json({ message: 'Excel export not yet implemented' });
+  res.status(501).json({ message: 'Excel export not yet implemented. Surveys: ' + surveysData.length });
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Vercel API running ✅', surveys: surveysData.length });
+  res.json({ status: 'API running', surveys: surveysData.length });
 });
 
-// Default
-app.get('/', (req, res) => {
-  res.json({ message: 'Voyage Survey API - Vercel Deployment' });
-});
-
-// Fallback 404
+// Fallback
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
 export default app;
-
