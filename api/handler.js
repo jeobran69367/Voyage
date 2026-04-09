@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Données en mémoire pour Vercel (sans DB pour le moment)
+// Données en mémoire
 let surveysData = [];
 let surveyId = 1;
 
@@ -16,7 +16,6 @@ app.post('/api/surveys', (req, res) => {
   try {
     const { name, country, month, duration, budget_min, budget_max, activities, comments } = req.body;
 
-    // Validation minimale
     if (!name || !country || !month) {
       return res.status(400).json({ error: 'Name, country, and month are required' });
     }
@@ -65,16 +64,13 @@ app.get('/api/surveys/stats', (req, res) => {
       });
     }
 
-    // Compter les pays
     const countryCounts = {};
     const monthCounts = {};
     let budgetValues = [];
 
     surveysData.forEach(survey => {
-      // Countries
       countryCounts[survey.country] = (countryCounts[survey.country] || 0) + 1;
 
-      // Months
       if (survey.month) {
         const months = survey.month.split(',').map(m => m.trim());
         months.forEach(m => {
@@ -82,7 +78,6 @@ app.get('/api/surveys/stats', (req, res) => {
         });
       }
 
-      // Budget
       if (survey.budget_min && survey.budget_max) {
         budgetValues.push((survey.budget_min + survey.budget_max) / 2);
       }
@@ -105,8 +100,8 @@ app.get('/api/surveys/stats', (req, res) => {
       countries,
       months,
       budgetStats: {
-        min: Math.min(...budgetValues),
-        max: Math.max(...budgetValues),
+        min: budgetValues.length ? Math.min(...budgetValues) : 0,
+        max: budgetValues.length ? Math.max(...budgetValues) : 0,
         average: Math.round(avgBudget)
       }
     });
@@ -130,32 +125,11 @@ app.get('/api/surveys/overview', (req, res) => {
   }
 });
 
-// GET - Export Excel (stub)
-app.get('/api/export/excel', (req, res) => {
-  res.status(501).json({ message: 'Excel export not yet implemented' });
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Vercel API running ✅', surveys: surveysData.length });
-});
-
-// Default
-app.get('/', (req, res) => {
-  res.json({ message: 'Voyage Survey API - Vercel Deployment' });
-});
-
-// 404 Fallback
+// 404
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found', path: req.path, method: req.method });
+  res.status(404).json({ error: 'Not found', path: req.path });
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error', details: err.message });
-});
-
-// Export for Vercel serverless
+// Export for Vercel
 export default app;
 
