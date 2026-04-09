@@ -12,7 +12,7 @@ let surveysData = [];
 let surveyId = 1;
 
 // POST - Ajouter un sondage
-app.post('/api/surveys', (req, res) => {
+app.post('/surveys', (req, res) => {
   try {
     const { name, country, month, duration, budget_min, budget_max, activities, comments } = req.body;
 
@@ -44,7 +44,7 @@ app.post('/api/surveys', (req, res) => {
 });
 
 // GET - Récupérer tous les sondages
-app.get('/api/surveys', (req, res) => {
+app.get('/surveys', (req, res) => {
   try {
     res.json(surveysData);
   } catch (error) {
@@ -54,7 +54,7 @@ app.get('/api/surveys', (req, res) => {
 });
 
 // GET - Statistiques
-app.get('/api/surveys/stats', (req, res) => {
+app.get('/surveys/stats', (req, res) => {
   try {
     if (surveysData.length === 0) {
       return res.json({
@@ -117,7 +117,7 @@ app.get('/api/surveys/stats', (req, res) => {
 });
 
 // GET - Vue d'ensemble
-app.get('/api/surveys/overview', (req, res) => {
+app.get('/surveys/overview', (req, res) => {
   try {
     res.json({
       totalResponses: surveysData.length,
@@ -131,12 +131,12 @@ app.get('/api/surveys/overview', (req, res) => {
 });
 
 // GET - Export Excel (stub)
-app.get('/api/export/excel', (req, res) => {
+app.get('/export/excel', (req, res) => {
   res.status(501).json({ message: 'Excel export not yet implemented' });
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'Vercel API running ✅', surveys: surveysData.length });
 });
 
