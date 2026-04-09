@@ -10,7 +10,15 @@
       "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     },
     {
-      "src": "/.*",
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/index.html",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
       "dest": "/index.html"
     }
   ]
