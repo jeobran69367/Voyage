@@ -3,17 +3,13 @@ import axios from 'axios';
 import '../styles/SurveyForm.css';
 
 const COUNTRIES = [
-  'France', 'Espagne', 'Italie', 'Allemagne', 'Suisse', 'Belgique', 'Pays-Bas',
-  'Portugal', 'Grèce', 'Croatie', 'Slovénie', 'Autriche', 'Pologne', 'République Tchèque',
-  'Hongrie', 'Roumanie', 'Thaïlande', 'Japon', 'Corée du Sud', 'Vietnam',
-  'Cambodge', 'Indonésie', 'Philippines', 'Malaisie', 'Singapour',
-  'Mexique', 'Brésil', 'Argentine', 'Chili', 'Pérou', 'Colombie',
-  'Canada', 'États-Unis', 'Maroc', 'Égypte', 'Afrique du Sud'
+  'France', 'Espagne', 'Italie', 'Belgique', 'Pays-Bas',
+  'Portugal', 'Grèce', 'Croatie', 'Suisse' , 
 ];
 
 const MONTHS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  'Juin',
+  'Juillet', 'Août'
 ];
 
 const ACTIVITIES = [
